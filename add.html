@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<meta name="robots" content="noindex, nofollow">
+<title>画面2・3 予約追加と確認｜L Message 予約管理 改善提案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<div class="app" id="app">
+  <div id="shell"></div>
+  <div class="main" id="bgMain"></div>
+  <div class="dim"></div>
+
+  <!-- ===== 画面2：予約追加 ===== -->
+  <div class="modal" role="dialog" aria-label="予約を追加">
+    <div class="modal-head">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--main)" stroke-width="2"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M12 13v4M10 15h4"/></svg>
+      <h2 class="t-screen">予約を追加</h2>
+      <span class="sub t-body">電話を受けながら、左で入力し、右で結果を確かめて登録します</span>
+      <a class="x" href="calendar.html" id="closeX" aria-label="閉じる" style="text-decoration:none">×</a>
+    </div>
+    <div class="modal-body">
+      <!-- 左：入力 -->
+      <div class="col-in">
+        <div class="sec" id="secCustomer">
+          <div class="sec-h"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z"/></svg>お客様 <span class="req">検索、または最近のお客様から選ぶ（●はLINEの友だち）</span></div>
+          <div class="searchbox"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b4b4b4" stroke-width="2"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg><input class="inp" id="search" placeholder="LINE名・名前・電話番号で検索" autocomplete="off"></div>
+          <div class="chips" id="recent"></div>
+          <button class="radio" id="nfRadio" type="button"><span class="rd"></span><span class="t-strong">LINEの友だちでない方（電話のお客様）</span></button>
+          <div class="nf disabled" id="nfFields">
+            <div><label for="nfName">お名前 <span style="color:var(--error)">*</span></label><input class="inp" id="nfName" placeholder="例）中村 良子"><div class="errmsg" id="nameErr" hidden>お名前を入れてください</div></div>
+            <div><label for="nfPhone">電話番号（任意）</label><input class="inp" id="nfPhone" placeholder="例）090-1234-5678"></div>
+            <div class="full"><label for="nfMail">メールアドレス（任意）</label><input class="inp" id="nfMail" placeholder="なくても登録できます"></div>
+          </div>
+        </div>
+        <div class="sec">
+          <div class="sec-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.5 7.5L20 18M8.5 16.5L20 6"/></svg>コース</div>
+          <div class="opt-grid" id="courses"></div>
+        </div>
+        <div class="sec">
+          <div class="sec-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>スタッフ</div>
+          <div class="opt-grid s3" id="staffs"></div>
+        </div>
+        <div class="sec" id="secDate">
+          <div class="sec-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16"/></svg>日時 <span class="req">右の「空き」を押すと、日時とスタッフが一度に入ります</span></div>
+          <div class="dtrow">
+            <select class="inp" id="selDay" aria-label="日付"></select>
+            <select class="inp" id="selTime" aria-label="開始時刻"></select>
+          </div>
+          <div class="dtnote" id="dtNote">まだ選ばれていません</div>
+        </div>
+        <div class="sec" style="margin-bottom:8px">
+          <div class="price">
+            <div class="r"><span id="pcName"></span><span id="pcVal"></span></div>
+            <div class="r"><span id="psName"></span><span id="psVal"></span></div>
+            <div class="tot"><span>合計</span><span id="ptVal"></span></div>
+          </div>
+        </div>
+        <div class="sw-row"><button class="tg" id="msgTg" type="button" aria-label="予約完了のLINEを送る"></button><span>予約完了のLINEを送る</span><span class="t-opt" id="msgNote"></span></div>
+      </div>
+
+      <!-- 右：結果 -->
+      <div class="col-out">
+        <div class="out-head">
+          <div class="sec-h" id="outTitle"></div>
+          <button class="iconbtn" style="width:32px;height:32px" id="prevDay" aria-label="前の日">‹</button>
+          <button class="iconbtn" style="width:32px;height:32px" id="nextDay" aria-label="次の日">›</button>
+          <div class="seg"><button class="on">日</button><button>週</button></div>
+        </div>
+        <div class="vgrid" id="vgrid">
+          <div class="vg-h"><div>時間</div><div>森 ひより</div><div>木下 あおい</div><div>指定なし</div></div>
+          <div class="vg-body" id="vgBody"></div>
+        </div>
+        <div class="cards">
+          <div class="pcard line" id="notice"><h5 id="noticeH"></h5><div class="bubble" id="noticeBody"></div></div>
+          <div class="pcard" id="gcard"><h5>${'Googleカレンダー'}</h5><div id="gBody"></div></div>
+        </div>
+        <div class="confirm" id="confirmRow">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--main)" stroke-width="2"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 14l3 3 5-6"/></svg>
+          <div class="sum" id="sumText"></div>
+          <div class="act">
+            <a class="btn" href="calendar.html" id="cancelBtn">やめる</a>
+            <button class="btn btn-primary" id="regBtn">この内容で登録</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 画面3：登録前の確認ダイアログ ===== -->
+  <div class="dim2" id="dim2" hidden></div>
+  <div class="cmodal" id="cmodal" role="alertdialog" aria-label="登録する前にご確認ください" hidden>
+    <div class="cm-head">
+      <div><h2 class="t-screen">登録する前にご確認ください</h2><p class="cm-sub t-body" id="cmSub"></p></div>
+      <button class="x" id="cmX" aria-label="閉じる">×</button>
+    </div>
+    <div class="cm-target t-body" id="cmTarget"></div>
+    <div class="cm-list" id="cmList"></div>
+    <div class="cm-foot">
+      <span class="left t-body">確認済み <b id="ckCount">0</b> / <span id="ckTotal">0</span> 件</span>
+      <div class="act"><button class="btn" id="cmBack">戻って直す</button><button class="btn btn-primary" id="cmReg" disabled>確認して登録する</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/store.js"></script>
+<script src="js/calendar.js"></script>
+<script>
+document.querySelector('#gcard h5').innerHTML = ICON.cal.replace('<svg ', '<svg width="16" height="16" ') + 'Googleカレンダー';
+
+/* ===== 入力の状態 ===== */
+const S = {
+  dk: DAY_KEYS.includes(qs('d')) ? qs('d') : DAY_KEYS[0],
+  staff: qs('staff') || null,
+  start: qs('t') ? +qs('t') : null,
+  course: SALON.courses[0],
+  cust: null,            // {name, friend, phone}
+  msg: true,
+  decisions: {}          // 確認ダイアログでの選択
+};
+const $ = id => document.getElementById(id);
+document.getElementById('shell').outerHTML = shellHTML();
+
+/* 左：選択肢を作る */
+$('recent').innerHTML = SALON.recent.map(c => `<button class="cchip" type="button" data-name="${c.name}"><span class="fr">●</span>${c.name}</button>`).join('');
+$('courses').innerHTML = SALON.courses.map(c => `<button class="opt" type="button" data-c="${c.id}">${c.name}<small>${c.min}分 ${yen(c.price)}</small></button>`).join('');
+$('selDay').innerHTML = DAY_KEYS.map(k => `<option value="${k}">${SALON.days[k].label}</option>`).join('');
+let tOpts = '<option value="">開始時刻を選ぶ</option>';
+for (let t = T0; t < T1; t += 30) tOpts += `<option value="${t}">${hhmm(t)}</option>`;
+$('selTime').innerHTML = tOpts;
+
+function staffButtons() {
+  const day = SALON.days[S.dk];
+  $('staffs').innerHTML = SALON.staff.map(sf => day.shifts[sf.id]
+    ? `<button class="opt ${S.staff === sf.id ? 'on' : ''}" type="button" data-s="${sf.id}">${sf.name}<small>指名料 ＋${yen(sf.fee)}</small></button>`
+    : `<button class="opt" type="button" disabled>${sf.name}<small>${day.short.split('（')[0]}はお休み</small></button>`).join('')
+    + `<button class="opt ${S.staff === 'none' ? 'on' : ''}" type="button" data-s="none">指定なし<small>指名料なし</small></button>`;
+}
+
+/* 右：その日の予定（縦） */
+const vTop = m => ((m - T0) / 60 * 30) + 'px', hgt = (a, b) => ((b - a) / 60 * 30 - 2) + 'px';
+function vgridHTML() {
+  const dk = S.dk, day = SALON.days[dk];
+  let times = '';
+  for (let t = T0; t < T1; t += 60) times += `<span style="top:${vTop(t)}">${hhmm(t)}</span>`;
+  const col = sid => {
+    let h = '';
+    if (sid !== 'none') {
+      if (!day.shifts[sid]) return `<div class="vb off" style="top:2px;bottom:2px"><b>お休み</b>${day.offNote[sid]}</div>`;
+      blocksOf(dk, sid).forEach(b => h += `<div class="vb ${b.type}" style="top:${vTop(b.s)};height:${hgt(b.s, b.e)}">${b.type === 'break' ? '休憩' : 'シフト外'}</div>`);
+      eventsOf(dk).filter(ev => ev.staff === sid).forEach(ev => {
+        h += ev.type === 'gcal'
+          ? `<div class="vb gcal" style="top:${vTop(ev.s)};height:${hgt(ev.s, ev.e)}">予定あり（Google）</div>`
+          : `<div class="vb rsv" style="top:${vTop(ev.s)};height:${hgt(ev.s, ev.e)}"><b>${ev.name}様</b>${ev.course}</div>`;
+      });
+      eventsOf(dk).filter(ev => ev.staff === 'none').forEach(ev => {
+        const c = candidateFor(dk, ev);
+        if (c && c.id === sid) h += `<div class="vb hold" style="top:${vTop(ev.s)};height:${hgt(ev.s, ev.e)}">確保中：${ev.name.split(' ')[0]}様（担当未定）</div>`;
+      });
+      for (let t = T0; t < T1; t += 60) if (!busyReason(dk, sid, t, t + 60)) h += `<div class="vb vfree" data-t="${t}" data-s="${sid}" style="top:${vTop(t)};height:${hgt(t, t + 60)}">空き</div>`;
+    } else {
+      eventsOf(dk).filter(ev => ev.staff === 'none').forEach(ev => h += `<div class="vb pending" style="top:${vTop(ev.s)};height:${hgt(ev.s, ev.e)}">担当未定　<b>${ev.name}様</b></div>`);
+      for (let t = T0; t < T1; t += 60) {
+        const taken = eventsOf(dk).some(ev => ev.staff === 'none' && overlap(ev.s, ev.e, t, t + 60));
+        if (!taken && SALON.staff.some(sf => day.shifts[sf.id] && !busyReason(dk, sf.id, t, t + 60))) h += `<div class="vb vfree" data-t="${t}" data-s="none" style="top:${vTop(t)};height:${hgt(t, t + 60)}">空き</div>`;
+      }
+    }
+    if (S.staff === sid && S.start != null) {
+      const e = S.start + S.course.min, clash = conflict();
+      h += `<div class="vb sel ${clash ? 'clash' : ''}" id="selBlk" style="top:${vTop(S.start)};height:${hgt(S.start, e)}">${clash ? '重なっています' : '選択中'}</div>`;
+    }
+    return h;
+  };
+  return `<div class="vg-times">${times}</div>` + ['mori', 'kino', 'none'].map(sid => `<div class="vcol" data-col="${sid}">${col(sid)}</div>`).join('');
+}
+
+/* 選んだ内容の重なり・休憩など（なければ null） */
+function conflict() {
+  if (!S.staff || S.start == null) return null;
+  const s = S.start, e = s + S.course.min;
+  if (S.staff === 'none') {
+    const ok = SALON.staff.some(sf => SALON.days[S.dk].shifts[sf.id] && !busyReason(S.dk, sf.id, s, e));
+    return ok ? null : { kind: 'nobody' };
+  }
+  return busyReason(S.dk, S.staff, s, e);
+}
+function conflictText(c) {
+  if (!c) return '';
+  const sf = staffById(S.staff);
+  if (c.kind === 'nobody') return 'この時間に対応できるスタッフがいません';
+  if (c.kind === 'rsv') return `${c.ev.name}様の予約（${hhmm(c.ev.s)}〜${hhmm(c.ev.e)}）と重なります`;
+  if (c.kind === 'hold') return `担当未定の ${c.ev.name}様の予約（${hhmm(c.ev.s)}〜）で確保中の時間と重なります`;
+  if (c.kind === 'gcal') return `${sf.name} のGoogleの予定（${hhmm(c.ev.s)}〜${hhmm(c.ev.e)}）と重なります`;
+  if (c.kind === 'break') return `${sf.name} の休憩（${hhmm(c.s)}〜${hhmm(c.e)}）にかかります`;
+  if (c.kind === 'outside') return `${sf.name} のシフト外（${hhmm(c.s)}〜${hhmm(c.e)}）にかかります`;
+  if (c.kind === 'off') return `${sf.name} はこの日お休みです`;
+  return '';
+}
+
+/* ===== 全体を描き直す ===== */
+function render() {
+  const day = SALON.days[S.dk];
+  if (S.staff && S.staff !== 'none' && !day.shifts[S.staff]) S.staff = null; // お休みの人は外す
+  $('bgMain').innerHTML = calendarHTML(S.dk);
+  staffButtons();
+  document.querySelectorAll('#courses .opt').forEach(b => b.classList.toggle('on', b.dataset.c === S.course.id));
+  document.querySelectorAll('#recent .cchip').forEach(b => b.classList.toggle('on', !!S.cust && S.cust.friend && S.cust.name === b.dataset.name));
+  $('nfRadio').classList.toggle('on', !!S.cust && !S.cust.friend);
+  $('nfFields').classList.toggle('disabled', !(S.cust && !S.cust.friend));
+  $('selDay').value = S.dk;
+  $('selTime').value = S.start != null ? S.start : '';
+  $('outTitle').innerHTML = ICON.cal.replace('<svg ', '<svg width="18" height="18" ') + day.label + 'の予定';
+  $('prevDay').disabled = S.dk === DAY_KEYS[0]; $('nextDay').disabled = S.dk === DAY_KEYS[DAY_KEYS.length - 1];
+  $('vgBody').innerHTML = vgridHTML();
+
+  const s = S.start, e = s != null ? s + S.course.min : null;
+  const sf = S.staff && S.staff !== 'none' ? staffById(S.staff) : null, fee = sf ? sf.fee : 0;
+  const clash = conflict();
+  $('dtNote').className = 'dtnote' + (s != null ? (clash ? '' : ' ok') : '');
+  $('dtNote').innerHTML = s == null ? 'まだ選ばれていません（最初から時刻は入れていません）'
+    : clash ? `<span style="color:var(--error-strong)">${hhmm(s)}〜${hhmm(e)}：${conflictText(clash)}</span>`
+    : `${day.label} ${hhmm(s)}〜${hhmm(e)}（${S.course.name} ${S.course.min}分）`;
+
+  $('pcName').textContent = S.course.name; $('pcVal').textContent = yen(S.course.price);
+  $('psName').textContent = sf ? `指名料（${sf.name}）` : '指名料（指定なし）'; $('psVal').textContent = yen(fee);
+  $('ptVal').textContent = yen(S.course.price + fee);
+
+  // お客様に伝わる内容
+  const friend = !S.cust || S.cust.friend;
+  const who = S.cust ? S.cust.name || 'お客様' : 'お客様';
+  const staffTxt = S.staff === 'none' ? '担当は当日までにお知らせします' : sf ? '担当 ' + sf.name : '担当（未選択）';
+  const when = s != null ? `${day.label}${hhmm(s)}〜${hhmm(e)}` : '（日時が決まると入ります）';
+  const total = `${yen(S.course.price + fee)}（${S.course.name} ${yen(S.course.price)}${fee ? '＋指名料 ' + yen(fee) : ''}）`;
+  if (friend) {
+    $('noticeH').innerHTML = ICON.chat + 'お客様に届くLINE（プレビュー）';
+    $('noticeBody').className = 'bubble' + (S.cust ? '' : ' empty');
+    $('noticeBody').innerHTML = `${who} 様<br>ご予約ありがとうございます。<br><span class="k">日時</span> ${when}<br><span class="k">メニュー</span> ${S.course.name}（${S.course.min}分）／${staffTxt}<br><span class="k">料金</span> ${total}<br><a class="link">予約の確認・変更はこちら</a>`;
+  } else {
+    $('noticeH').innerHTML = ICON.phone + '電話口での確認（読み上げ用）';
+    $('noticeBody').className = 'bubble';
+    const nm = S.cust.name ? S.cust.name + '様' : 'お客様';
+    $('noticeBody').innerHTML = `「${nm}、<b>${s != null ? day.label.replace('（', ' ').replace('）', '曜日') + 'の ' + hhmm(s) + 'から' : '（日時）'}</b>、${S.course.name}で${S.staff === 'none' ? '担当はこちらで決めさせていただきます' : sf ? '担当は' + sf.short + 'です' : ''}。料金は${yen(S.course.price + fee)}です。」<br><span class="k">LINEの友だちでないため、確認のLINEは届きません。${S.cust.phone ? '電話番号 ' + S.cust.phone + ' が予約に残ります。' : '電話番号を入れておくと、予約に残ります。'}</span>`;
+  }
+  // Googleに入るか
+  const gl = SALON.staff.map(x => gcalOn(x.id) ? '' : `<div class="gline"><span class="dot ng"></span><div style="color:var(--gray)">${x.name} は連携が外れています。<button class="link" style="font-size:12px" data-reconnect="${x.id}">つなぎ直す</button></div></div>`).join('');
+  let g1;
+  if (!S.staff) g1 = `<div class="gline"><span class="dot" style="background:var(--gray-2)"></span><div style="color:var(--gray)">スタッフを選ぶと、Googleに入るかがわかります</div></div>`;
+  else if (S.staff === 'none') g1 = `<div class="gline"><span class="dot ng"></span><div><span class="gstat no">Googleには入りません</span><br><span style="color:var(--gray)">担当を決めると、その人の予定に入ります</span></div></div>`;
+  else if (gcalOn(S.staff)) g1 = `<div class="gline"><span class="dot ok"></span><div><span class="gstat ok">${sf.name} の予定に入ります</span><br><span style="color:var(--gray)">連携中・登録から数分で反映</span></div></div>`;
+  else g1 = `<div class="gline"><span class="dot ng"></span><div><span class="gstat no">${sf.name} のGoogleには入りません</span><br><span style="color:var(--gray)">連携が外れています</span></div></div>`;
+  $('gBody').innerHTML = g1 + (S.staff && S.staff !== 'none' && !gcalOn(S.staff) ? '' : gl);
+
+  // 予約完了のLINE
+  $('msgTg').classList.toggle('off', !friend || !S.msg);
+  $('msgNote').textContent = friend ? '' : '（友だちでないため送れません）';
+
+  // 確定の行
+  const ready = S.staff && s != null && S.cust;
+  const missing = [!S.cust && 'お客様', !S.staff && 'スタッフ', s == null && '日時'].filter(Boolean);
+  $('sumText').className = 'sum' + (ready ? '' : ' empty');
+  $('sumText').innerHTML = ready
+    ? `${day.short.replace('（', '（')} ${hhmm(s)}〜${hhmm(e)}　${S.course.name}　${S.staff === 'none' ? '指定なし' : sf.name}　${S.cust.name || '（お名前）'} 様`
+    : `あと「${missing.join('・')}」を選ぶと登録できます`;
+  $('regBtn').disabled = !ready;
+  window.refreshMarks && refreshMarks();
+}
+
+/* ===== 入力の操作 ===== */
+document.querySelector('.modal').addEventListener('click', e => {
+  const t = e.target;
+  const ch = t.closest('#recent .cchip');
+  if (ch) { S.cust = { name: ch.dataset.name, friend: true }; $('search').value = ''; render(); return; }
+  if (t.closest('#nfRadio')) { S.cust = { name: $('nfName').value.trim(), phone: $('nfPhone').value.trim(), friend: false }; render(); $('nfName').focus(); return; }
+  const co = t.closest('#courses .opt');
+  if (co) { S.course = SALON.courses.find(c => c.id === co.dataset.c); render(); return; }
+  const so = t.closest('#staffs .opt[data-s]');
+  if (so) { S.staff = so.dataset.s; render(); return; }
+  const fr = t.closest('.vb.vfree');
+  if (fr) { S.staff = fr.dataset.s; S.start = +fr.dataset.t; render(); return; }
+  const rc = t.closest('[data-reconnect]');
+  if (rc) { Store.update(st => st.gcal[rc.dataset.reconnect] = true); render(); toast(staffById(rc.dataset.reconnect).name + ' のGoogleカレンダーをつなぎ直しました'); return; }
+  if (t.closest('#msgTg') && (!S.cust || S.cust.friend)) { S.msg = !S.msg; render(); }
+});
+['nfName', 'nfPhone'].forEach(id => $(id).addEventListener('input', () => {
+  if (!S.cust || S.cust.friend) S.cust = { friend: false };
+  S.cust.name = $('nfName').value.trim(); S.cust.phone = $('nfPhone').value.trim();
+  if (S.cust.name) { $('nameErr').hidden = true; $('nfName').classList.remove('err'); }
+  render();
+}));
+$('search').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const q = $('search').value.trim(); const hit = SALON.recent.find(c => q && c.name.replace(' ', '').includes(q.replace(' ', '')));
+  if (hit) { S.cust = { name: hit.name, friend: true }; render(); } else toast('（プロトタイプ）見つからないときは「LINEの友だちでない方」から入れます');
+});
+$('selDay').onchange = () => { S.dk = $('selDay').value; render(); };
+$('selTime').onchange = () => { S.start = $('selTime').value === '' ? null : +$('selTime').value; if (S.start != null && !S.staff) S.staff = null; render(); };
+$('prevDay').onclick = () => { S.dk = DAY_KEYS[DAY_KEYS.indexOf(S.dk) - 1]; render(); };
+$('nextDay').onclick = () => { S.dk = DAY_KEYS[DAY_KEYS.indexOf(S.dk) + 1]; render(); };
+
+/* ===== 画面3：登録前の確認 ===== */
+let checks = [];
+function buildChecks() {
+  const out = [], s = S.start, e = s + S.course.min, day = SALON.days[S.dk];
+  const c = conflict();
+  if (c) {
+    const title = { rsv: '先客と重なっています', hold: '担当未定の予約と重なっています', gcal: 'Googleの予定と重なっています', break: '休憩時間にかかっています', outside: 'シフトの時間外にかかっています', off: 'お休みの日です', nobody: '対応できるスタッフがいません' }[c.kind];
+    const extra = c.kind === 'rsv' || c.kind === 'hold' ? '同時に対応できる数は 1 人です。' : '';
+    out.push({ id: 'clash', cls: 'err', ic: '!', h: title, p: conflictText(c) + '。' + extra,
+      acts: [{ label: '別の時間を選ぶ', cls: 'btn-err', back: true }], sub: { label: 'このまま登録する（重ねて入れる）', done: '重ねて登録します' } });
+  }
+  if (S.cust && S.cust.name) {
+    const near = allEvents().filter(ev => ev.name === S.cust.name && Math.abs(DAY_KEYS.indexOf(ev.day) - DAY_KEYS.indexOf(S.dk)) <= 1);
+    if (near.length) {
+      const list = near.map(ev => `${SALON.days[ev.day].short} ${hhmm(ev.s)}（${ev.course}）`).join('・');
+      out.push({ id: 'same', cls: 'info', ic: '人', h: '同じお客様の予約が近くにあります', p: `${S.cust.name} 様は、<b>${list}</b> にも予約があります。ご家族の分でしょうか、それとも日時の変更でしょうか。`,
+        acts: [{ label: 'ご家族の分として追加', cls: 'btn-line-link', done: 'ご家族の分として追加' },
+               { label: '日時の変更として扱う', cls: 'btn-link', done: '前の予約を取り消して、この日時に変更', set: () => S.decisions.remove = near.map(ev => ev.id) }] });
+    }
+  }
+  if (S.staff === 'none') {
+    const cand = SALON.staff.find(sf => day.shifts[sf.id] && !busyReason(S.dk, sf.id, s, e));
+    out.push({ id: 'none', cls: 'warn', ic: '!', h: '担当が決まっていません', p: `指定なしのまま登録すると、Googleには入らず、お客様には「担当は当日までにお知らせ」と届きます。${cand ? `この時間に対応できるのは <b>${cand.name}</b> です。` : ''}`,
+      acts: (cand ? [{ label: cand.short + 'に割り当てる', cls: 'btn-warn', done: cand.name + ' に割り当てて登録', set: () => S.decisions.assign = cand.id }] : [])
+        .concat([{ label: '指定なしのまま', cls: '', done: '指定なしのまま登録' }]) });
+  } else if (!gcalOn(S.staff)) {
+    const sf = staffById(S.staff);
+    out.push({ id: 'gcal', cls: 'warn', ic: '!', h: 'この予約はGoogleカレンダーに入りません', p: `${sf.name} のGoogleカレンダー連携が外れています。エルメには登録されますが、${sf.short}さんのGoogleには表示されません。`,
+      acts: [{ label: 'つなぎ直す', cls: 'btn-warn', done: 'つなぎ直してから登録', set: () => S.decisions.reconnect = sf.id },
+             { label: '今はしない', cls: '', done: '今回はGoogleに入れずに登録' }] });
+  }
+  return out;
+}
+function openChecks() {
+  S.decisions = {};
+  checks = buildChecks();
+  if (!checks.length) return save();
+  const s = S.start, e = s + S.course.min, sf = S.staff === 'none' ? null : staffById(S.staff);
+  $('cmSub').textContent = `${checks.length}件の確認があります。内容を見て、それぞれ選んでください。`;
+  $('cmTarget').innerHTML = `<span><b>${SALON.days[S.dk].label}${hhmm(s)}〜${hhmm(e)}</b></span><span>${S.course.name}</span><span>${sf ? sf.name : '指定なし'}</span><span><b>${S.cust.name} 様</b></span><span style="margin-left:auto;color:var(--gray)">合計 ${yen(S.course.price + (sf ? sf.fee : 0))}</span>`;
+  $('cmList').innerHTML = checks.map((c, i) => `
+    <div class="ck ${c.cls}" data-i="${i}" id="ck-${c.id}">
+      <span class="ic" style="${c.ic === '人' ? 'font-size:12px' : ''}">${c.ic}</span>
+      <div><h4>${c.h}</h4><p>${c.p}</p></div>
+      <div class="acts">${c.acts.map((a, j) => `<button class="btn ${a.cls}" data-a="${j}">${a.label}</button>`).join('')}
+        ${c.sub ? `<button class="sublink" data-sub="1">${c.sub.label}</button>` : ''}
+        <span class="done">${ICON.check.replace('<svg ', '<svg width="16" height="16" ')}<span></span></span></div>
+    </div>`).join('');
+  $('ckTotal').textContent = checks.length; count();
+  $('dim2').hidden = false; $('cmodal').hidden = false;
+  $('cmodal').style.top = Math.max(60, (800 - $('cmodal').offsetHeight) / 2) + 'px';
+  window.refreshMarks && refreshMarks();
+}
+function count() {
+  const n = document.querySelectorAll('#cmList .ck.resolved').length;
+  $('ckCount').textContent = n; $('cmReg').disabled = n < checks.length;
+}
+function closeChecks() { $('dim2').hidden = true; $('cmodal').hidden = true; window.refreshMarks && refreshMarks(); }
+$('cmList').addEventListener('click', e => {
+  const card = e.target.closest('.ck'); if (!card) return;
+  const c = checks[+card.dataset.i];
+  const b = e.target.closest('[data-a]'), sub = e.target.closest('[data-sub]');
+  let done = null;
+  if (b) { const a = c.acts[+b.dataset.a]; if (a.back) { closeChecks(); $('selTime').focus(); toast('右の「空き」を押すか、開始時刻を選び直してください'); return; } if (a.set) a.set(); done = a.done; }
+  if (sub) done = c.sub.done;
+  if (done) { card.classList.add('resolved'); card.querySelector('.done span').textContent = done; card.querySelector('.ic').textContent = '✓'; count(); }
+});
+$('cmX').onclick = closeChecks; $('cmBack').onclick = closeChecks;
+$('cmReg').onclick = save;
+
+$('regBtn').onclick = () => {
+  if (S.cust && !S.cust.friend && !S.cust.name) { $('nameErr').hidden = false; $('nfName').classList.add('err'); $('nfName').focus(); return; }
+  openChecks();
+};
+
+/* 登録してカレンダーに戻る */
+function save() {
+  const d = S.decisions, id = 'n' + Date.now();
+  const staff = d.assign || S.staff;
+  Store.update(st => {
+    st.added.push({ id, day: S.dk, staff, s: S.start, e: S.start + S.course.min, name: S.cust.name, course: S.course.name, phone: S.cust.phone || '' });
+    if (d.remove) st.removed.push(...d.remove);
+    if (d.reconnect) st.gcal[d.reconnect] = true;
+  });
+  const sfn = staff === 'none' ? '指定なし' : staffById(staff).name;
+  const g = staff !== 'none' && gcalOn(staff) ? '。Googleカレンダーにも入ります' : '';
+  const msg = `${S.cust.name} 様の予約を登録しました（${SALON.days[S.dk].short} ${hhmm(S.start)}〜・${sfn}）${g}`;
+  location.href = `calendar.html?d=${S.dk}&new=${id}&msg=${encodeURIComponent(msg)}`;
+}
+
+/* ===== プレゼン用 ===== */
+window.PAGE = {
+  id: 'add',
+  showMark: i => $('cmodal').hidden ? i < 8 : i >= 8,
+  title: '画面2 予約追加（入力｜結果）',
+  before: 'images/before-screen2.png',
+  tools: [
+    { id: 'tExample', label: '確認が出る例を入れる', onclick: () => { closeChecks(); S.dk = '2026-10-02'; S.staff = 'kino'; S.start = 600; S.course = SALON.courses[0]; S.cust = { name: '山田 花子', friend: true }; render(); toast('10/2 10:00・木下 あおい・山田 花子様を入れました。「この内容で登録」を押してください'); } },
+    { id: 'tRecheck', label: '確認をやり直す', onclick: () => { if (S.cust && S.staff && S.start != null) openChecks(); else toast('先にお客様・スタッフ・日時を入れてください'); } }
+  ],
+  points: [
+    { for: '#secCustomer', t: '電話のお客様は名前と電話番号だけ', b: 'メールアドレスは任意にし、電話番号の欄を用意。常連さんは「最近のお客様」から1回で選べる。', ref: '検証 No.50・51' },
+    { for: '#staffs', t: 'コースとスタッフはボタンで選ぶ', b: 'お休みのスタッフは押せず、理由（○/○はお休み）を表示。スタッフの選び忘れで黙って「指定なし」になることを防ぐ。', ref: '検証 No.52・61' },
+    { for: '#secDate', t: '日時は初期値を入れない', b: '「今日の10:00」を最初から入れず、右の空き枠を押すと日付・時刻・スタッフが一度に決まる。キーボードでも選べる。', ref: '検証 No.52' },
+    { for: '.price', t: '料金は内訳で', b: 'コース料金と指名料を分けて表示し、合計がどう決まったかが見える。', ref: '検証 No.30・31' },
+    { for: '#vgrid', t: 'その日の予定を見ながら入れる', b: '先客・休憩・Googleの予定・お休み・担当未定が、入力と同じ画面に見える。重なると選んだ枠が赤くなる。紙の台帳で「書く場所に先客が見えている」状態をつくる。', ref: '検証 No.53（先客のある枠に重ねて入った）' },
+    { for: '#notice', t: 'お客様に伝わる内容を登録前に確認', b: 'LINEの友だちならLINEの文面（担当名・料金の内訳・変更の入口入り）、電話のお客様なら電話口で読み上げる確認文に切り替わる。', ref: '検証 No.14・15・30' },
+    { for: '#gcard', t: 'Googleに入るかを登録前に表示', b: '指定なしや連携が外れているスタッフの予約は「入りません」と先に伝え、その場でつなぎ直せる。', ref: '検証 No.35・38・40' },
+    { for: '#confirmRow', t: '確定の行', b: '登録する内容を1行で見せる。足りない項目があると「あと○○を選ぶと登録できます」と出る（エルメのAPIキー発行画面の「○日に自動で無効になります」と同じ考え方）。', ref: '検証 No.52・G3' }
+  ],
+  extra: [{ title: '画面3 登録前の確認ダイアログ', points: [
+    { for: '#cmTarget', t: '何を登録しようとしているかを最上部に', b: '日時・コース・担当・お客様・合計を1行で再掲し、日付の変え忘れやスタッフの選び違いにここで気づける。', ref: '検証 No.52' },
+    { for: '#ck-clash', t: '重なり・休憩（赤）', b: '手動登録は上限を超えて入る仕様（マニュアルに明記）なので、仕様は変えずに「重なっている事実」と相手の名前を見せる。重ねる操作は文字リンクにして、うっかり押しにくくする。', ref: '検証 No.53' },
+    { for: '#ck-same', t: '同じお客様（青）', b: '件数で止めると家族の分まで止まる。「ご家族の分か、日時の変更か」を聞き、変更なら取り消しと取り直しを1つの流れにする。', ref: '検証 No.22・23・55' },
+    { for: '#ck-gcal', t: 'Googleに入らないこと・担当未定（黄）', b: '連携が外れているスタッフの予約は登録前に伝えて、その場でつなぎ直せる。指定なしなら、対応できる人への割り当てを提案する。', ref: '検証 No.35・38・39・40' },
+    { for: '#cmReg', t: '確認済みの数と登録ボタン', b: 'すべてに答えると登録できる。確認がない予約では、このダイアログは出さずにそのまま登録する（毎回出すと読まれなくなるため）。', ref: '評価軸④：操作ミスの防止・確認ダイアログ' }
+  ] }]
+};
+render();
+// 画面3を直接見るための入口（index.html・ツールバーから）
+if (qs('demo') === 'confirm') { S.dk = '2026-10-02'; S.staff = 'kino'; S.start = 600; S.course = SALON.courses[0]; S.cust = { name: '山田 花子', friend: true }; render(); setTimeout(openChecks, 50); }
+</script>
+<script src="js/memo.js"></script>
+</body>
+</html>

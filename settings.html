@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<meta name="robots" content="noindex, nofollow">
+<title>画面4 予約設定｜L Message 予約管理 改善提案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<div class="app" id="app">
+  <div id="shell"></div>
+  <div class="main" id="main">
+    <div class="crumb t-opt"><a href="calendar.html">カレンダー一覧</a>　›　予約管理</div>
+    <div class="title-row">
+      <h1 class="t-title">Hair Salon Komorebi</h1>
+      <div class="actions"><a class="btn btn-primary" href="add.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>予約を追加</a></div>
+    </div>
+    <nav class="tabs">
+      <a href="today.html">本日／新着の予約</a><a href="calendar.html">予約カレンダー</a><a>コース・スタッフ</a><a class="active">予約設定</a><a>決済連携<span class="pill">利用なし</span></a>
+    </nav>
+
+    <div class="set-wrap">
+      <aside class="set-side">
+        <div class="grp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>メッセージ・予約の各種設定</div>
+        <a class="on">予約・変更・キャンセル時の<br>メッセージと各種設定</a>
+        <a>予約前後に送るリマインド</a>
+        <a>前後の空き時間</a>
+        <a>期間限定の営業</a>
+        <a>店舗とスタッフの受付上限</a>
+        <div class="grp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h4"/></svg>予約画面</div>
+        <a>お客様への質問項目</a>
+        <a>トップ画面設定</a>
+        <div class="grp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>連携設定</div>
+        <a href="calendar.html">Googleカレンダー連携</a>
+      </aside>
+
+      <section class="set-main">
+        <h2 class="t-screen">予約・変更・キャンセル時のメッセージと各種設定</h2>
+        <p class="t-sub">今の設定の状態を1行ずつ表示しています。行を押すと、その設定を直接変えられます。</p>
+        <div class="set-grid" id="grid"></div>
+        <div class="set-note"><span class="dot ng"></span>黄色の点は、確かめておくとよい設定です（予約の重なりやお客様への伝わり方に関わるもの）</div>
+      </section>
+    </div>
+  </div>
+
+  <!-- 設定パネル（同時予約・完了メッセージ） -->
+  <div class="dim2" id="dim" hidden></div>
+  <div class="spanel" id="panel" role="dialog" hidden></div>
+</div>
+
+<script src="js/store.js"></script>
+<script>
+document.getElementById('shell').outerHTML = shellHTML();
+const $ = id => document.getElementById(id);
+const I = {
+  rsv: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M9 15l2 2 4-4"/></svg>',
+  chg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 8h14l-3-3M20 16H6l3 3"/></svg>',
+  cxl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 7l10 10M17 7L7 17"/></svg>',
+  link: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>'
+};
+const row = (id, dot, k, v, hint) => `<button class="srow" data-row="${id}" id="row-${id}"><span class="d ${dot}"></span><span><span class="k">${k}</span><br><span class="v">${v}</span>${hint ? `<span class="h">${hint}</span>` : ''}</span><span class="ar">›</span></button>`;
+
+function render() {
+  const st = Store.get();
+  const multi = { none: ['ng', '制限なし', '同じお客様の2件目もそのまま入ります。「確かめる」にできます'], ask: ['ok', '重なったら確かめる', ''], limit: ['ok', `1人 ${st.multiLimit} 件まで`, ''] }[st.multi];
+  $('grid').innerHTML = `
+  <div class="scard rsv" id="cardRsv">
+    <div class="scard-h"><span class="ci">${I.rsv}</span><h3>予約時</h3></div>
+    ${row('approve', 'ok', '承認', '全承認（すぐに確定）')}
+    ${row('period', 'ok', '受付期間', 'いつでも 〜 コース開始まで')}
+    ${row('multi', multi[0], '同時予約', multi[1], multi[2])}
+    ${row('msg', st.msgFixed ? 'ok' : 'ng', '予約完了のLINE', st.msgFixed ? '担当名・料金の内訳・変更の入口あり' : '担当名なし・料金は合計のみ', st.msgFixed ? '' : '初期文面に担当名と内訳を入れられます')}
+    <div class="scard-f"><button class="btn" data-open="rsv">予約時の設定をする</button></div>
+  </div>
+  <div class="scard chg" id="cardChg">
+    <div class="scard-h"><span class="ci">${I.chg}</span><h3>変更時</h3><span class="badge newb">新規</span></div>
+    ${row('chgok', 'ok', 'お客様による変更', '受け付ける（LINEから日時を選び直す）')}
+    ${row('chgend', 'ok', '変更の締切', '前日 18:00 まで')}
+    ${row('chgold', 'ok', '前の予約', '変更すると自動で取り消す')}
+    ${row('chgmsg', 'ok', '変更完了のLINE', '新しい日時と、変更前の日時を並べて送る')}
+    <div class="scard-f"><button class="btn" data-open="chg">変更時の設定をする</button></div>
+  </div>
+  <div class="scard cxl" id="cardCxl">
+    <div class="scard-h"><span class="ci">${I.cxl}</span><h3>キャンセル時</h3></div>
+    ${row('cxlok', 'ok', '承認', '全承認（すぐに取り消し）')}
+    ${row('cxlend', 'ok', 'キャンセルの締切', 'コース開始まで')}
+    ${row('refund', 'ok', '返金の案内', '表示しない（決済を使っていないため）')}
+    ${row('cxlmsg', 'ok', 'キャンセル完了のLINE', '取り直しの入口つき')}
+    <div class="scard-f"><button class="btn" data-open="cxl">キャンセル時の設定をする</button></div>
+  </div>
+  <div class="entry" id="entry">
+    <h3>予約の入口</h3>
+    <p class="sub">お客様が予約ページにたどり着ける場所</p>
+    <div class="eitem"><div class="k">${I.link}予約ページのリンク</div><div class="v">https://example.lme.jp/salon/komorebi</div><button class="btn" data-toast="予約ページのリンクをコピーしました">コピーする</button></div>
+    <div class="eitem"><div class="k"><span class="dot ng"></span>リッチメニュー</div><div class="v">予約ページへのボタンがありません</div><button class="btn btn-outline" data-toast="（プロトタイプ）リッチメニューの編集が開き、予約ページのリンクが入った状態になります">ボタンを置く</button></div>
+    <div class="eitem"><div class="k"><span class="dot ng"></span>テンプレート・自動応答</div><div class="v">「予約したい」への返信に予約ページがありません</div><button class="btn btn-outline" data-toast="（プロトタイプ）メッセージ編集の「差し込み」に「予約ページ」が加わります">差し込みで入れる</button></div>
+  </div>`;
+  window.refreshMarks && refreshMarks();
+}
+
+/* ===== 設定パネル ===== */
+function openPanel(kind) {
+  const st = Store.get();
+  let h = '';
+  if (kind === 'multi') {
+    const c = (v, t, p, ex) => `<button class="choice ${st.multi === v ? 'on' : ''}" data-v="${v}"><span class="rd"></span><span><b>${t}</b><p>${p}</p>${ex || ''}</span></button>`;
+    h = `<div class="spanel-h"><div><h2 class="t-screen">同時予約</h2><p class="t-sub">1人のお客様が、同じ時期に予約を2件以上入れたときの扱い</p></div><button class="x" data-close>×</button></div>
+    <div class="spanel-b" id="choices">
+      ${c('none', '制限なし', '2件目もそのまま入ります。お店もお客様も気づきにくいままです。')}
+      ${c('ask', '重なったら確かめる（おすすめ）', '2件目を止めずに「ご家族の分の追加ですか、日時の変更ですか」とお客様に聞きます。変更なら、前の予約の取り消しまで1つの流れで行います。店主の予約追加でも同じ確認が出ます。', '<span class="ex">お客様に表示：「10/1 15:00 にもご予約があります。ご家族の分ですか？ 日時の変更ですか？」</span>')}
+      ${c('limit', '件数で制限する', '決めた件数を超える予約は受け付けません。ご家族の分をまとめて取る正しい予約も止まります。', `<span class="lim">1人 <select id="limSel">${[1, 2, 3].map(n => `<option ${st.multiLimit === n ? 'selected' : ''}>${n}</option>`).join('')}</select> 件まで</span>`)}
+    </div>
+    <div class="spanel-f"><button class="btn" data-close>やめる</button><button class="btn btn-primary" id="saveMulti">保存する</button></div>`;
+  } else if (kind === 'msg') {
+    h = `<div class="spanel-h"><div><h2 class="t-screen">予約完了のLINE</h2><p class="t-sub">初期文面に、担当スタッフ名と料金の内訳、変更の入口を入れます</p></div><button class="x" data-close>×</button></div>
+    <div class="spanel-b"><div class="msgprev">
+      <div class="col"><h5>今の文面</h5><div class="bubble" style="background:var(--gray-3)">山田 花子 様<br>下記の通り、予約が完了いたしました。<br>◇ 予約日時　10/1（木）15:00<br>◇ ご予約コース名　カット<br>◇ コース料金　5,500円<br>◇ キャンセル用URL</div></div>
+      <div class="col"><h5>直したあとの文面</h5><div class="bubble">山田 花子 様<br>下記の通り、予約が完了いたしました。<br>◇ 予約日時　10/1（木）15:00〜16:00<br>◇ メニュー　カット<br><mark>◇ 担当　森 ひより</mark><br><mark>◇ 料金　5,500円（カット 4,500円＋指名料 1,000円）</mark><br><mark>◇ 予約の確認・変更はこちら</mark></div></div>
+    </div></div>
+    <div class="spanel-f"><button class="btn" data-close>やめる</button><button class="btn btn-primary" id="saveMsg">この文面にする</button></div>`;
+  } else return false;
+  $('panel').innerHTML = h; $('panel').hidden = false; $('dim').hidden = false;
+  $('panel').style.top = Math.max(70, (800 - $('panel').offsetHeight) / 2) + 'px';
+  return true;
+}
+function closePanel() { $('panel').hidden = true; $('dim').hidden = true; }
+$('panel').addEventListener('click', e => {
+  if (e.target.closest('[data-close]')) return closePanel();
+  const ch = e.target.closest('.choice');
+  if (ch && !e.target.closest('select')) { document.querySelectorAll('.choice').forEach(x => x.classList.toggle('on', x === ch)); }
+  if (e.target.closest('#saveMulti')) {
+    const v = document.querySelector('.choice.on').dataset.v;
+    Store.update(st => { st.multi = v; if ($('limSel')) st.multiLimit = +$('limSel').value; });
+    closePanel(); render();
+    toast(v === 'ask' ? '同時予約を「重なったら確かめる」にしました。カレンダーの上の帯にも表示されます' : '同時予約の設定を保存しました');
+  }
+  if (e.target.closest('#saveMsg')) { Store.update(st => st.msgFixed = true); closePanel(); render(); toast('予約完了のLINEに、担当名・料金の内訳・変更の入口を入れました'); }
+});
+$('dim').onclick = closePanel;
+$('main').addEventListener('click', e => {
+  const r = e.target.closest('[data-row]');
+  if (r) { if (!openPanel(r.dataset.row)) toast('（プロトタイプ）この設定の画面が直接開きます'); return; }
+  const t = e.target.closest('[data-toast]');
+  if (t) { toast(t.dataset.toast); return; }
+  if (e.target.closest('[data-open]')) toast('（プロトタイプ）詳しい設定の画面が開きます');
+});
+
+window.PAGE = {
+  id: 'settings',
+  title: '画面4 予約設定（要約カード）',
+  before: 'images/before-screen4.png',
+  points: [
+    { for: '#cardChg', t: '「変更時」のカードを新しく', b: '今は設定の入口が「予約時」「キャンセル時」の2枚だけで、お客様の変更は「キャンセル＋取り直し」の2段階。変更を1つの流れにする設定を、同じ並びに置く。Webhookにも「予約変更時」の通知が予定されている。', ref: '検証 No.22・57' },
+    { for: '#cardRsv', t: '要約に「今の状態」を1行ずつ', b: '今の要約には承認と受付期間しか出ず、同時予約の設定は「予約時の設定をする → オプション設定」の3段階奥にある。行を押すと、その設定が直接開く。', ref: '検証 No.55' },
+    { for: '#row-multi', t: '同時予約は3択に', b: '「制限なし」「件数で制限」の間に「重なったら確かめる」を加える。件数で止めると家族の分まで止まるため。件数の欄に初めから「0」を入れない。押すと設定パネルが開き、保存するとカレンダーの状態の帯にも反映される。', ref: '検証 No.23・55・56' },
+    { for: '#row-msg', t: '完了メッセージの中身を状態として見せる', b: '初期文面に担当名がなく、指名料込みの合計が「コース料金」の見出しで届く。今の文面と直したあとの文面を並べ、1回で直せる。', ref: '検証 No.14・30' },
+    { for: '#row-refund', t: '返金の案内は、決済を使うときだけ', b: '決済を使っていないのに、キャンセル完了画面に赤字で「返金はございません」と出ていた。お客様の不安と確認の電話を減らす。', ref: '検証 No.25' },
+    { for: '#entry', t: '「予約の入口」のカード', b: '予約ページへの入口がリッチメニューにもテンプレートにもなく、お客様の立場で3つの道をたどっても着かなかった。出口（キャンセルURL）は自動で入るのに、入口は手作業。入口が置いてあるかを、設定と同じ画面で確かめられる。', ref: '検証 No.17・18・19' }
+  ],
+  extra: [{ title: '他の機能への波及', points: [
+    { t: '要約カードに状態を1行出す', b: '一斉配信・ステップ配信・フォームの設定カードにも使える（例：「配信対象：全員」「回答後のアクション：未設定」）。' },
+    { t: '差し込みで入口を入れる', b: 'メッセージ編集の差し込みに「予約ページ」「フォーム」のリンクを加え、入口も出口と同じように自動で入るようにする。' },
+    { t: '初期値の見直し', b: '予約追加の「今日の10:00」、件数欄の「0」、リマインドの【1日前】など、初期値が操作ミスを生む箇所をまとめて見直す。' }
+  ] }]
+};
+render();
+if (qs('open') === 'multi') setTimeout(() => openPanel('multi'), 60);
+</script>
+<script src="js/memo.js"></script>
+</body>
+</html>

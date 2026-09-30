@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<meta name="robots" content="noindex, nofollow">
+<title>画面1 予約カレンダー｜L Message 予約管理 改善提案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+<div class="app" id="app">
+  <div id="shell"></div>
+  <div class="main" id="main"></div>
+</div>
+
+<script src="js/store.js"></script>
+<script src="js/calendar.js"></script>
+<script>
+window.PAGE = {
+  id: 'calendar',
+  title: '画面1 予約カレンダー（日表示）',
+  before: 'images/before-screen1.png',
+  points: [
+    { for: '#gStatus', t: '状態の帯', b: 'Google連携の外れと同時予約の設定を、カレンダーの上に常に表示。奥の設定画面を開かなくても気づけて、その場で「つなぎ直す」ことができる。', ref: '検証 No.38・39・40・55' },
+    { for: '#addBtn', t: '「予約を追加」を右上に', b: '予約管理のどのタブでも同じ場所に置き、電話を受けながらでも迷わない入口にする。', ref: '検証 No.49（初めての店主が2分32秒たっても入れ方がわからなかった）' },
+    { for: '.blk.gcal', t: 'Googleの予定は「予定あり」とだけ表示', b: '白いマスで理由が見えなかった枠に、理由と次の操作を出す。従業員の私用の内容は見せない。押すと理由が出る。', ref: '検証 No.60・63・64' },
+    { for: '.blk.off', t: 'お休みは1日単位で、はっきり表示', b: '「シフトを追加してください」ではなく「お休み」と伝え、出勤に変える操作は別に用意する。', ref: '検証 No.3・61・62' },
+    { for: '.blk.pending', t: '担当未定と割り当て', b: '指定なしの予約を、その場で担当に割り当てられる。対応できる人の枠は「確保中」と表示し、実質の担当が見える。', ref: '検証 No.35・46' },
+    { for: '.same', t: '同じお客様のしるし', b: '近い時間に同じお客様の予約が並ぶと、つなぎ線で知らせる（ご家族の分か、変更し忘れかを確かめるきっかけ）。', ref: '検証 No.23' },
+    { for: '#legend', t: '予約できない理由を見分ける凡例', b: '同じ⊘だった休憩・お休み・シフト外・Googleの予定を、見た目で区別する。空いている枠にマウスを乗せると「＋予約を追加」が出る。', ref: '検証 No.3・9・36' }
+  ]
+};
+let DK = DAY_KEYS.includes(qs('d')) ? qs('d') : DAY_KEYS[0];
+const app = document.getElementById('app'), main = document.getElementById('main');
+document.getElementById('shell').outerHTML = shellHTML();
+
+function render() {
+  main.innerHTML = calendarHTML(DK);
+  const nid = qs('new');
+  if (nid) { const el = document.getElementById('ev-' + nid); if (el) el.classList.add('isnew'); }
+  window.refreshMarks && refreshMarks();
+}
+render();
+
+let pop = null;
+function closePop() { if (pop) { pop.remove(); pop = null; } }
+main.addEventListener('click', e => {
+  const go = e.target.closest('[data-go]');
+  if (go && !go.disabled) { DK = go.dataset.go; history.replaceState(null, '', '?d=' + DK); closePop(); render(); return; }
+  const act = e.target.closest('[data-act]');
+  if (act) {
+    const a = act.dataset.act;
+    if (a === 'assign') {
+      Store.update(st => st.assigned[act.dataset.id] = act.dataset.to);
+      const sf = staffById(act.dataset.to);
+      closePop(); render();
+      toast(`${sf.name} に割り当てました。${gcalOn(sf.id) ? 'Googleカレンダーにも入ります。' : '（Google連携が外れているため、Googleには入りません）'}`);
+      return;
+    }
+    if (a === 'reconnect') { Store.update(st => st.gcal[act.dataset.id] = true); render(); toast(`${staffById(act.dataset.id).name} のGoogleカレンダーをつなぎ直しました`); return; }
+    if (a === 'workday') { toast('（プロトタイプ）臨時の出勤日として、この日だけシフトを登録する画面が開きます'); return; }
+    if (a === 'shift') { toast('（プロトタイプ）シフト追加の画面が開きます'); return; }
+  }
+  const why = e.target.closest('[data-why]');
+  if (why && why.dataset.why !== 'off') {
+    closePop();
+    pop = reasonPop(why, DK);
+    if (pop) { app.appendChild(pop); placePop(pop, why, app); pop.querySelector('[data-close]').onclick = closePop; }
+    return;
+  }
+  if (!e.target.closest('.pop')) closePop();
+});
+
+// 登録して戻ってきたとき
+if (qs('msg')) toast(decodeURIComponent(qs('msg')));
+</script>
+<script src="js/memo.js"></script>
+</body>
+</html>
