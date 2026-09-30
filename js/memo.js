@@ -27,7 +27,7 @@
   const listHTML = (pts, start) => '<ol>' + pts.map((p, i) => `<li><span class="num">${start + i}</span><div><b>${p.t}</b>：${p.b}${p.ref ? `<span class="ref">${p.ref}</span>` : ''}</div></li>`).join('') + '</ol>';
   let n = 1, body = `<h3 class="t-head">${P.title}</h3>` + listHTML(P.points, n); n += P.points.length;
   (P.extra || []).forEach(x => { body += `<h3 class="t-head">${x.title}</h3>` + listHTML(x.points, n); n += x.points.length; });
-  body += `<h3 class="t-head">改善前（現在のUI）</h3><div class="before"><img src="${P.before}" alt="改善前の画面" onerror="this.remove()"><div class="ph">改善前のスクリーンショットを <b>${P.before}</b> に置くと、ここに表示されます。</div></div>`;
+  body += `<h3 class="t-head">改善前（現在のUI）</h3><div class="before"><a href="${P.before}" target="_blank" rel="noopener"><img src="${P.before}" alt="改善前の画面" onerror="this.closest('a').remove()"></a><div class="ph">改善前のスクリーンショットを <b>${P.before}</b> に置くと、ここに表示されます。</div></div><p class="zoom">画像を押すと、別のタブで大きく表示されます</p>`;
   const memo = document.createElement('aside');
   memo.className = 'memo';
   memo.innerHTML = `<div class="memo-head"><div><b>提案メモ</b><small>赤い数字は画面の上の注釈と対応しています</small></div><button class="x" aria-label="閉じる">×</button></div><div class="memo-body t-body">${body}</div>`;

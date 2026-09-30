@@ -328,7 +328,11 @@ body{padding-top:48px}
 .memo-body li b{font-weight:600}
 .memo-body .ref{display:block;color:var(--gray);font-size:12px;line-height:16px;margin-top:2px}
 .memo-body .before{border:1px dashed var(--gray-4);border-radius:6px;background:var(--gray-3);min-height:120px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.memo-body .before img{max-width:100%;display:block}
+.memo-body .before:has(img){display:block;border-style:solid;border-color:var(--border);background:#fff;min-height:0}
+.memo-body .before:has(img) .ph{display:none}
+.memo-body .before a{display:block;cursor:zoom-in}
+.memo-body .before img{width:100%;display:block}
+.memo-body .zoom{font-size:12px;line-height:16px;color:var(--gray);margin-top:4px}
 .memo-body .before .ph{color:var(--gray);font-size:12px;line-height:16px;padding:12px;text-align:center}
 .mk{position:absolute;width:24px;height:24px;border-radius:50%;background:var(--error);color:#fff;font-size:12px;font-weight:600;display:none;align-items:center;justify-content:center;z-index:90;box-shadow:0 0 0 3px #fff;pointer-events:none}
 body.marks-on .mk{display:flex}
